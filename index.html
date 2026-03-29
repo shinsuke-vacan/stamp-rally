@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>スタンプラリー</title>
-  <!-- Google Maps APIキーを YOUR_API_KEY に差し替えてください -->
+  <title>避難所マップ</title>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAn6_0hTztNqjV2BGOUMJxD5jh5lbnJnVo&callback=initMap" async defer></script>
   <style>
     * {
@@ -15,73 +14,79 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-      background: #f0f4f8;
+      background: #111;
       min-height: 100vh;
-      color: #333;
+      color: #e5e5e5;
     }
 
     /* ヘッダー */
     .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: #1a1a1a;
+      color: #f5f5f5;
       padding: 20px;
       text-align: center;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      border-bottom: 1px solid #333;
     }
 
     .header h1 {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       margin-bottom: 8px;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
+      font-weight: 300;
+      text-transform: uppercase;
     }
 
     .progress-bar-container {
-      background: rgba(255,255,255,0.3);
-      border-radius: 10px;
-      height: 12px;
+      background: #333;
+      border-radius: 2px;
+      height: 4px;
       overflow: hidden;
-      margin-top: 8px;
+      margin-top: 10px;
     }
 
     .progress-bar {
-      background: linear-gradient(90deg, #ffd700, #ffaa00);
+      background: #fff;
       height: 100%;
-      border-radius: 10px;
+      border-radius: 2px;
       transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       width: 0%;
     }
 
     .progress-text {
-      font-size: 0.9rem;
-      margin-top: 6px;
-      opacity: 0.9;
+      font-size: 0.8rem;
+      margin-top: 8px;
+      color: #888;
+      font-weight: 300;
+      letter-spacing: 1px;
     }
 
     /* タブ切り替え */
     .tabs {
       display: flex;
-      background: white;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
     }
 
     .tab {
       flex: 1;
-      padding: 12px;
+      padding: 14px;
       text-align: center;
-      font-size: 0.9rem;
-      font-weight: 600;
+      font-size: 0.8rem;
+      font-weight: 500;
       cursor: pointer;
-      border-bottom: 3px solid transparent;
+      border-bottom: 2px solid transparent;
       transition: all 0.3s;
-      color: #888;
+      color: #666;
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
 
     .tab.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
+      color: #fff;
+      border-bottom-color: #fff;
     }
 
     /* メインコンテンツ */
@@ -111,57 +116,70 @@
 
     #map {
       width: 100%;
-      height: calc(100vh - 140px);
+      height: calc(100vh - 130px);
     }
 
     .spot-popup {
       text-align: center;
-      min-width: 180px;
+      min-width: 200px;
       font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-    }
-
-    .spot-popup .popup-icon {
-      font-size: 2rem;
-      margin-bottom: 4px;
     }
 
     .spot-popup .popup-name {
       font-size: 1rem;
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
+      color: #1a1a1a;
     }
 
-    .spot-popup .popup-desc {
-      font-size: 0.75rem;
-      color: #6b7280;
+    .spot-popup .popup-address {
+      font-size: 0.7rem;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .spot-popup .popup-distance {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .spot-popup .popup-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
       margin-bottom: 10px;
-      line-height: 1.4;
     }
 
     .spot-popup .popup-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #1a1a1a;
       color: white;
       border: none;
       padding: 8px 20px;
-      border-radius: 8px;
+      border-radius: 6px;
       font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
       width: 100%;
+      letter-spacing: 0.5px;
     }
 
     .spot-popup .popup-btn:active {
       opacity: 0.8;
     }
 
-    .spot-popup .popup-btn.collected-btn {
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    .spot-popup .popup-btn.confirmed-btn {
+      background: #555;
       cursor: default;
     }
 
-    /* Google Maps InfoWindow のスタイル調整 */
     .gm-style-iw {
-      border-radius: 14px !important;
+      border-radius: 12px !important;
     }
 
     /* 現在地ボタン */
@@ -169,45 +187,46 @@
       position: absolute;
       bottom: 32px;
       right: 16px;
-      height: 48px;
+      height: 44px;
       padding: 0 18px;
-      background: linear-gradient(135deg, #4285F4, #356ac3);
-      color: white;
+      background: #fff;
+      color: #1a1a1a;
       border: none;
-      border-radius: 24px;
-      box-shadow: 0 4px 12px rgba(66,133,244,0.4);
+      border-radius: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
       font-family: inherit;
       z-index: 10;
       transition: transform 0.2s, box-shadow 0.2s;
+      letter-spacing: 0.5px;
     }
 
     .my-location-btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(66,133,244,0.5);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
 
     .my-location-btn:active {
       transform: scale(0.96);
     }
 
-    /* スポットカード */
+    /* 避難所カード */
     .spot-card {
-      background: white;
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      border: 1px solid #2a2a2a;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      align-items: flex-start;
+      gap: 14px;
+      transition: transform 0.2s, border-color 0.2s;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
@@ -217,130 +236,166 @@
       transform: scale(0.98);
     }
 
-    .spot-card.collected {
-      background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
-      border: 2px solid #fbbf24;
+    .spot-card.confirmed {
+      background: #1a1a1a;
+      border: 1px solid #555;
     }
 
-    .stamp-circle {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
+    .shelter-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
+      font-size: 1.4rem;
       flex-shrink: 0;
-      transition: all 0.4s;
+      background: #222;
+      border: 1px solid #333;
     }
 
-    .stamp-circle.empty {
-      background: #e5e7eb;
-      border: 3px dashed #9ca3af;
-    }
-
-    .stamp-circle.filled {
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
-      border: 3px solid #d97706;
-      animation: stampIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    @keyframes stampIn {
-      0% { transform: scale(0) rotate(-180deg); opacity: 0; }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    .shelter-icon.confirmed-icon {
+      background: #2a2a2a;
+      border-color: #666;
     }
 
     .spot-info {
       flex: 1;
+      min-width: 0;
     }
 
     .spot-name {
-      font-size: 1.1rem;
-      font-weight: 700;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: #f0f0f0;
+    }
+
+    .spot-address {
+      font-size: 0.7rem;
+      color: #666;
       margin-bottom: 4px;
     }
 
-    .spot-description {
-      font-size: 0.8rem;
-      color: #6b7280;
-      line-height: 1.4;
+    .spot-distance {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #999;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
+
+    .spot-distance svg {
+      flex-shrink: 0;
+    }
+
+    .disaster-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .disaster-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #222;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 0.6rem;
+      color: #aaa;
+      border: 1px solid #333;
+    }
+
+    .disaster-tag svg {
+      flex-shrink: 0;
+    }
+
+    .disaster-tag.earthquake { background: #2a2500; border-color: #554a00; color: #cca300; }
+    .disaster-tag.flood { background: #001a2a; border-color: #003355; color: #5599cc; }
+    .disaster-tag.fire { background: #2a0000; border-color: #550000; color: #cc5555; }
+    .disaster-tag.storm { background: #1a0033; border-color: #330055; color: #9966cc; }
 
     .spot-status {
-      font-size: 0.75rem;
-      margin-top: 6px;
-      font-weight: 600;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
 
-    .spot-status.not-collected {
-      color: #9ca3af;
+    .spot-status.not-confirmed {
+      color: #555;
     }
 
-    .spot-status.collected-text {
-      color: #d97706;
+    .spot-status.confirmed-text {
+      color: #999;
     }
 
-    /* スタンプ帳ビュー */
-    .stamp-book {
-      background: white;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    /* 確認済みリストビュー */
+    .checklist {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #2a2a2a;
     }
 
-    .stamp-book h2 {
+    .checklist h2 {
       text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.2rem;
-      color: #4b5563;
+      margin-bottom: 16px;
+      font-size: 1rem;
+      color: #888;
+      font-weight: 400;
+      letter-spacing: 1px;
     }
 
-    .stamp-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .stamp-slot {
-      aspect-ratio: 1;
-      border-radius: 16px;
+    .checklist-item {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #222;
+    }
+
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+
+    .check-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      transition: all 0.3s;
+      font-size: 0.7rem;
+      flex-shrink: 0;
     }
 
-    .stamp-slot.empty-slot {
-      background: #f3f4f6;
-      border: 2px dashed #d1d5db;
+    .check-icon.checked {
+      background: #fff;
+      color: #1a1a1a;
     }
 
-    .stamp-slot.filled-slot {
-      background: linear-gradient(135deg, #fef3c7, #fde68a);
-      border: 2px solid #fbbf24;
+    .check-icon.unchecked {
+      background: #333;
+      color: #555;
     }
 
-    .stamp-slot .stamp-icon {
-      font-size: 2rem;
+    .checklist-name {
+      flex: 1;
+      font-size: 0.85rem;
+      font-weight: 500;
     }
 
-    .stamp-slot .stamp-label {
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: #6b7280;
-      text-align: center;
-      line-height: 1.2;
+    .checklist-name.done {
+      color: #e5e5e5;
     }
 
-    .stamp-slot.filled-slot .stamp-label {
-      color: #92400e;
-    }
-
-    .stamp-slot .stamp-question {
-      font-size: 2rem;
-      color: #d1d5db;
+    .checklist-name.pending {
+      color: #555;
     }
 
     /* コンプリートモーダル */
@@ -350,7 +405,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.8);
       display: none;
       align-items: center;
       justify-content: center;
@@ -368,8 +423,9 @@
     }
 
     .modal {
-      background: white;
-      border-radius: 24px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 16px;
       padding: 40px 32px;
       text-align: center;
       max-width: 340px;
@@ -388,28 +444,31 @@
     }
 
     .modal h2 {
-      font-size: 1.5rem;
-      color: #d97706;
+      font-size: 1.4rem;
+      color: #fff;
       margin-bottom: 8px;
+      font-weight: 400;
+      letter-spacing: 1px;
     }
 
     .modal p {
-      color: #6b7280;
-      font-size: 0.9rem;
+      color: #888;
+      font-size: 0.85rem;
       line-height: 1.6;
       margin-bottom: 24px;
     }
 
     .modal button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: #fff;
+      color: #1a1a1a;
       border: none;
       padding: 12px 32px;
-      border-radius: 12px;
-      font-size: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
       transition: transform 0.2s;
+      letter-spacing: 0.5px;
     }
 
     .modal button:active {
@@ -425,18 +484,19 @@
 
     .reset-btn {
       background: none;
-      border: 1px solid #d1d5db;
-      color: #9ca3af;
+      border: 1px solid #333;
+      color: #555;
       padding: 8px 20px;
-      border-radius: 8px;
-      font-size: 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
       cursor: pointer;
       transition: all 0.2s;
+      letter-spacing: 0.5px;
     }
 
     .reset-btn:hover {
-      border-color: #ef4444;
-      color: #ef4444;
+      border-color: #888;
+      color: #888;
     }
 
     /* 紙吹雪 */
@@ -464,14 +524,14 @@
       100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
     }
 
-    /* スタンプ収集アニメーション */
+    /* 確認アニメーション */
     .collect-flash {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(251, 191, 36, 0.3);
+      background: rgba(255, 255, 255, 0.15);
       pointer-events: none;
       z-index: 500;
       animation: flashOut 0.4s ease-out forwards;
@@ -487,18 +547,18 @@
 
   <!-- ヘッダー -->
   <div class="header">
-    <h1>スタンプラリー</h1>
+    <h1>避難所マップ</h1>
     <div class="progress-bar-container">
       <div class="progress-bar" id="progressBar"></div>
     </div>
-    <div class="progress-text" id="progressText">0 / 9 スタンプ</div>
+    <div class="progress-text" id="progressText">0 / 0 確認済み</div>
   </div>
 
   <!-- タブ -->
   <div class="tabs">
     <div class="tab active" data-tab="map">地図</div>
-    <div class="tab" data-tab="spots">スポット一覧</div>
-    <div class="tab" data-tab="book">スタンプ帳</div>
+    <div class="tab" data-tab="list">避難所一覧</div>
+    <div class="tab" data-tab="check">確認状況</div>
   </div>
 
   <!-- 地図 -->
@@ -517,28 +577,25 @@
       </button>
     </div>
 
-    <div class="view" id="spotsView">
-      <div id="spotList"></div>
+    <div class="view" id="listView">
+      <div id="shelterList"></div>
       <div class="reset-section">
         <button class="reset-btn" id="resetBtn">データをリセット</button>
       </div>
     </div>
 
-    <!-- スタンプ帳 -->
-    <div class="view" id="bookView">
-      <div class="stamp-book">
-        <h2>あなたのスタンプ帳</h2>
-        <div class="stamp-grid" id="stampGrid"></div>
-      </div>
+    <!-- 確認状況 -->
+    <div class="view" id="checkView">
+      <div class="checklist" id="checklist"></div>
     </div>
   </div>
 
   <!-- コンプリートモーダル -->
   <div class="modal-overlay" id="completeModal">
     <div class="modal">
-      <div class="trophy">🏆</div>
-      <h2>コンプリート!</h2>
-      <p>すべてのスタンプを集めました！<br>おめでとうございます！</p>
+      <div class="trophy" id="trophyIcon"></div>
+      <h2>全避難所 確認完了!</h2>
+      <p>近隣のすべての避難所を確認しました。<br>いざという時に備えましょう！</p>
       <button id="closeModal">とじる</button>
     </div>
   </div>
@@ -547,23 +604,127 @@
   <div class="confetti-container" id="confettiContainer"></div>
 
   <script>
-    // スポットデータ（港区白金4丁目付近）
-    const SPOTS = [
-      { id: 1, name: '白金プラチナ通り', icon: '🌳', description: 'イチョウ並木が美しいおしゃれな通り。',         lat: 35.6430, lng: 139.7265 },
-      { id: 2, name: '国立科学博物館附属自然教育園', icon: '🌿', description: '都心に残る貴重な自然林を散策できる。', lat: 35.6385, lng: 139.7220 },
-      { id: 3, name: '白金氷川神社',     icon: '⛩️', description: '白金の鎮守として親しまれる歴史ある神社。',     lat: 35.6420, lng: 139.7310 },
-      { id: 4, name: 'ベーカリーカフェ', icon: '🍞', description: '焼きたてパンの香りが漂う人気のカフェ。',       lat: 35.6445, lng: 139.7285 },
-      { id: 5, name: '白金台どんぐり公園', icon: '🌸', description: '地元の子どもたちに愛される憩いの公園。',     lat: 35.6405, lng: 139.7255 },
-      { id: 6, name: '東京都庭園美術館', icon: '🏛️', description: 'アール・デコ様式の美しい美術館。',            lat: 35.6380, lng: 139.7210 },
-      { id: 7, name: '白金商店街',       icon: '🏪', description: '昔ながらの温かい雰囲気が残る商店街。',         lat: 35.6455, lng: 139.7300 },
-      { id: 8, name: '白金台カフェ通り', icon: '☕', description: '個性的なカフェが立ち並ぶ隠れた名所。',         lat: 35.6395, lng: 139.7280 },
-      { id: 9, name: '聖心女子学院前',   icon: '🗼', description: '歴史ある学舎と緑豊かな景観が楽しめる。',       lat: 35.6440, lng: 139.7240 },
+    // SVGアイコン定義
+    const SVG_ICONS = {
+      shelter: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+      confirmed: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+      pin: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+      check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+      earthquake: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 12 6 8 10 16 14 4 18 14 22 12"/></svg>`,
+      flood: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg>`,
+      fire: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+      storm: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>`,
+      shield: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
+    };
+
+    // 災害種別の定義
+    const DISASTER_TYPES = {
+      earthquake: { icon: 'earthquake', label: '地震' },
+      flood:      { icon: 'flood', label: '洪水' },
+      fire:       { icon: 'fire', label: '火災' },
+      storm:      { icon: 'storm', label: '暴風' },
+    };
+
+    // 避難所データ（港区白金4丁目付近）
+    const SHELTERS = [
+      {
+        id: 1, name: '白金の丘学園',
+        address: '港区白金4-1-12',
+        description: '港区立の小中一貫校。地域の主要な避難所。',
+        lat: 35.6418, lng: 139.7278,
+        disasterTypes: ['earthquake', 'flood', 'fire'],
+      },
+      {
+        id: 2, name: '白金台いきいきプラザ',
+        address: '港区白金台4-6-2',
+        description: '高齢者・地域住民向け福祉施設。福祉避難所。',
+        lat: 35.6390, lng: 139.7245,
+        disasterTypes: ['earthquake'],
+      },
+      {
+        id: 3, name: '国立科学博物館附属自然教育園',
+        address: '港区白金台5-21-5',
+        description: '広い緑地を持つ一時集合場所。',
+        lat: 35.6385, lng: 139.7220,
+        disasterTypes: ['earthquake', 'fire'],
+      },
+      {
+        id: 4, name: '白金台児童遊園',
+        address: '港区白金台3-18',
+        description: '白金台駅近くの公園。一時集合場所。',
+        lat: 35.6395, lng: 139.7270,
+        disasterTypes: ['earthquake'],
+      },
+      {
+        id: 5, name: '東京都庭園美術館',
+        address: '港区白金台5-21-9',
+        description: '広い敷地を持つ美術館。一時集合場所として利用可。',
+        lat: 35.6380, lng: 139.7208,
+        disasterTypes: ['earthquake', 'fire'],
+      },
+      {
+        id: 6, name: '白金小学校',
+        address: '港区白金3-13-7',
+        description: '区立小学校。避難所に指定。',
+        lat: 35.6440, lng: 139.7315,
+        disasterTypes: ['earthquake', 'flood', 'fire'],
+      },
+      {
+        id: 7, name: '三光小学校',
+        address: '港区白金3-8-15',
+        description: '区立小学校。避難所に指定。',
+        lat: 35.6450, lng: 139.7290,
+        disasterTypes: ['earthquake', 'flood', 'fire', 'storm'],
+      },
+      {
+        id: 8, name: '白金氷川神社',
+        address: '港区白金2-1-7',
+        description: '広い境内を持つ神社。一時集合場所。',
+        lat: 35.6425, lng: 139.7320,
+        disasterTypes: ['earthquake'],
+      },
+      {
+        id: 9, name: '恵比寿公園',
+        address: '渋谷区恵比寿1-2',
+        description: '近隣の広域避難場所。大規模災害時の避難先。',
+        lat: 35.6470, lng: 139.7135,
+        disasterTypes: ['earthquake', 'fire', 'storm'],
+      },
     ];
 
-    const STORAGE_KEY = 'stamp-rally-collected';
+    const STORAGE_KEY = 'shelter-confirmed';
 
-    // 収集済みスタンプの読み込み
-    function loadCollected() {
+    // 距離計算（Haversine）
+    function calcDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371e3;
+      const toRad = deg => deg * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function formatDistance(meters) {
+      if (meters < 1000) return Math.round(meters) + 'm';
+      return (meters / 1000).toFixed(1) + 'km';
+    }
+
+    function getDistanceText(shelter) {
+      if (!currentUserPosition) return '';
+      const d = calcDistance(currentUserPosition.lat, currentUserPosition.lng, shelter.lat, shelter.lng);
+      return formatDistance(d);
+    }
+
+    function disasterTagsHtml(types) {
+      return types.map(t => {
+        const dt = DISASTER_TYPES[t];
+        return `<span class="disaster-tag ${t}">${SVG_ICONS[dt.icon]} ${dt.label}</span>`;
+      }).join('');
+    }
+
+    // 確認済みデータ
+    function loadConfirmed() {
       try {
         const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
         return Array.isArray(data) ? data : [];
@@ -572,89 +733,107 @@
       }
     }
 
-    // 収集済みスタンプの保存
-    function saveCollected(collected) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(collected));
+    function saveConfirmed(confirmed) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(confirmed));
     }
 
-    let collected = loadCollected();
+    let confirmed = loadConfirmed();
+    let currentUserPosition = null;
 
     // プログレスバー更新
     function updateProgress() {
-      const count = collected.length;
-      const total = SPOTS.length;
+      const count = confirmed.length;
+      const total = SHELTERS.length;
       const pct = (count / total) * 100;
-
       document.getElementById('progressBar').style.width = pct + '%';
-      document.getElementById('progressText').textContent = `${count} / ${total} スタンプ`;
+      document.getElementById('progressText').textContent = `${count} / ${total} 確認済み`;
     }
 
-    // スポット一覧の描画
-    function renderSpots() {
-      const container = document.getElementById('spotList');
-      container.innerHTML = SPOTS.map(spot => {
-        const isCollected = collected.includes(spot.id);
+    // 避難所を距離順にソート
+    function getSortedShelters() {
+      if (!currentUserPosition) return SHELTERS;
+      return [...SHELTERS].sort((a, b) => {
+        const dA = calcDistance(currentUserPosition.lat, currentUserPosition.lng, a.lat, a.lng);
+        const dB = calcDistance(currentUserPosition.lat, currentUserPosition.lng, b.lat, b.lng);
+        return dA - dB;
+      });
+    }
+
+    // 避難所一覧の描画
+    function renderShelterList() {
+      const container = document.getElementById('shelterList');
+      const sorted = getSortedShelters();
+      container.innerHTML = sorted.map(s => {
+        const isConfirmed = confirmed.includes(s.id);
+        const dist = getDistanceText(s);
         return `
-          <div class="spot-card ${isCollected ? 'collected' : ''}" data-id="${spot.id}">
-            <div class="stamp-circle ${isCollected ? 'filled' : 'empty'}">
-              ${isCollected ? spot.icon : ''}
+          <div class="spot-card ${isConfirmed ? 'confirmed' : ''}" data-id="${s.id}">
+            <div class="shelter-icon ${isConfirmed ? 'confirmed-icon' : ''}">
+              ${isConfirmed ? SVG_ICONS.confirmed : SVG_ICONS.shelter}
             </div>
             <div class="spot-info">
-              <div class="spot-name">${spot.name}</div>
-              <div class="spot-description">${spot.description}</div>
-              <div class="spot-status ${isCollected ? 'collected-text' : 'not-collected'}">
-                ${isCollected ? '✓ スタンプ収集済み' : 'タップしてスタンプを獲得'}
+              <div class="spot-name">${s.name}</div>
+              <div class="spot-address">${s.address}</div>
+              ${dist ? `<div class="spot-distance">${SVG_ICONS.pin} ${dist}</div>` : ''}
+              <div class="disaster-tags">${disasterTagsHtml(s.disasterTypes)}</div>
+              <div class="spot-status ${isConfirmed ? 'confirmed-text' : 'not-confirmed'}">
+                ${isConfirmed ? '✓ 確認済み' : 'タップして確認する'}
               </div>
             </div>
           </div>
         `;
       }).join('');
 
-      // カードクリックイベント
       container.querySelectorAll('.spot-card').forEach(card => {
         card.addEventListener('click', () => {
-          const id = parseInt(card.dataset.id);
-          collectStamp(id);
+          confirmShelter(parseInt(card.dataset.id));
         });
       });
     }
 
-    // スタンプ帳の描画
-    function renderStampBook() {
-      const grid = document.getElementById('stampGrid');
-      grid.innerHTML = SPOTS.map(spot => {
-        const isCollected = collected.includes(spot.id);
-        return `
-          <div class="stamp-slot ${isCollected ? 'filled-slot' : 'empty-slot'}">
-            ${isCollected
-              ? `<span class="stamp-icon">${spot.icon}</span><span class="stamp-label">${spot.name}</span>`
-              : `<span class="stamp-question">?</span><span class="stamp-label">${spot.name}</span>`
-            }
-          </div>
-        `;
-      }).join('');
+    // 確認状況の描画
+    function renderChecklist() {
+      const el = document.getElementById('checklist');
+      const sorted = getSortedShelters();
+      const confirmedCount = confirmed.length;
+      const total = SHELTERS.length;
+
+      el.innerHTML = `
+        <h2>確認状況 (${confirmedCount}/${total})</h2>
+        ${sorted.map(s => {
+          const done = confirmed.includes(s.id);
+          const dist = getDistanceText(s);
+          return `
+            <div class="checklist-item">
+              <div class="check-icon ${done ? 'checked' : 'unchecked'}">
+                ${done ? SVG_ICONS.check : ''}
+              </div>
+              <span class="checklist-name ${done ? 'done' : 'pending'}">${s.name}</span>
+              ${dist ? `<span style="font-size:0.75rem;color:#666;font-weight:500;">${dist}</span>` : ''}
+            </div>
+          `;
+        }).join('')}
+      `;
     }
 
-    // スタンプ収集
-    function collectStamp(id) {
-      if (collected.includes(id)) return;
+    // 避難所確認
+    function confirmShelter(id) {
+      if (confirmed.includes(id)) return;
 
-      collected.push(id);
-      saveCollected(collected);
+      confirmed.push(id);
+      saveConfirmed(confirmed);
 
-      // フラッシュ演出
       const flash = document.createElement('div');
       flash.className = 'collect-flash';
       document.body.appendChild(flash);
       flash.addEventListener('animationend', () => flash.remove());
 
-      renderSpots();
-      renderStampBook();
+      renderShelterList();
+      renderChecklist();
       renderMap();
       updateProgress();
 
-      // コンプリートチェック
-      if (collected.length === SPOTS.length) {
+      if (confirmed.length === SHELTERS.length) {
         setTimeout(() => showComplete(), 600);
       }
     }
@@ -665,24 +844,21 @@
       launchConfetti();
     }
 
-    // 紙吹雪
     function launchConfetti() {
       const container = document.getElementById('confettiContainer');
-      const colors = ['#fbbf24', '#f59e0b', '#667eea', '#764ba2', '#ef4444', '#10b981', '#3b82f6'];
-
+      const colors = ['#fff', '#ccc', '#999', '#666', '#ddd', '#bbb'];
       for (let i = 0; i < 80; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDelay = Math.random() * 2 + 's';
-        confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
-        confetti.style.width = (6 + Math.random() * 8) + 'px';
-        confetti.style.height = (6 + Math.random() * 8) + 'px';
-        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
-        container.appendChild(confetti);
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + '%';
+        c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        c.style.animationDelay = Math.random() * 2 + 's';
+        c.style.animationDuration = (2 + Math.random() * 2) + 's';
+        c.style.width = (6 + Math.random() * 8) + 'px';
+        c.style.height = (6 + Math.random() * 8) + 'px';
+        c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        container.appendChild(c);
       }
-
       setTimeout(() => { container.innerHTML = ''; }, 5000);
     }
 
@@ -692,59 +868,43 @@
     let openInfoWindow = null;
     let myLocationMarker = null;
     let myLocationAccuracy = null;
-    let watchId = null;
 
     function initMap() {
       gmap = new google.maps.Map(document.getElementById('map'), {
         center: { lat: 35.6420, lng: 139.7270 },
-        zoom: 16,
-        mapId: 'stamp-rally-map',
+        zoom: 15,
         disableDefaultUI: true,
-        streetViewControl: false,
-        fullscreenControl: false,
       });
 
       renderMap();
       startWatchingLocation();
-
-      // 初期描画（地図読み込み後）
-      renderSpots();
-      renderStampBook();
+      renderShelterList();
+      renderChecklist();
       updateProgress();
     }
 
-    // 現在地の追跡
     function startWatchingLocation() {
       if (!navigator.geolocation) return;
-
-      watchId = navigator.geolocation.watchPosition(
+      navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          const accuracy = pos.coords.accuracy;
-          updateMyLocation(lat, lng, accuracy);
+          updateMyLocation(lat, lng, pos.coords.accuracy);
         },
-        (err) => {
-          console.warn('位置情報の取得に失敗:', err.message);
-        },
+        (err) => console.warn('位置情報の取得に失敗:', err.message),
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
       );
     }
 
     function updateMyLocation(lat, lng, accuracy) {
       const pos = { lat, lng };
+      currentUserPosition = pos;
 
-      // 精度円
       if (!myLocationAccuracy) {
         myLocationAccuracy = new google.maps.Circle({
-          map: gmap,
-          center: pos,
-          radius: accuracy,
-          fillColor: '#667eea',
-          fillOpacity: 0.12,
-          strokeColor: '#667eea',
-          strokeOpacity: 0.3,
-          strokeWeight: 1,
+          map: gmap, center: pos, radius: accuracy,
+          fillColor: '#4285F4', fillOpacity: 0.12,
+          strokeColor: '#4285F4', strokeOpacity: 0.3, strokeWeight: 1,
           clickable: false,
         });
       } else {
@@ -752,96 +912,79 @@
         myLocationAccuracy.setRadius(accuracy);
       }
 
-      // 青い丸マーカー
       if (!myLocationMarker) {
-        const blueDotSvg = `data:image/svg+xml,` +
-          `%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E` +
-          `%3Ccircle cx='12' cy='12' r='10' fill='white'/%3E` +
-          `%3Ccircle cx='12' cy='12' r='7' fill='%234285F4'/%3E` +
-          `%3C/svg%3E`;
-
+        const svg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='10' fill='white'/%3E%3Ccircle cx='12' cy='12' r='7' fill='%234285F4'/%3E%3C/svg%3E`;
         myLocationMarker = new google.maps.Marker({
-          position: pos,
-          map: gmap,
-          icon: {
-            url: blueDotSvg,
-            scaledSize: new google.maps.Size(22, 22),
-            anchor: new google.maps.Point(11, 11),
-          },
-          title: '現在地',
-          zIndex: 999,
-          clickable: false,
+          position: pos, map: gmap,
+          icon: { url: svg, scaledSize: new google.maps.Size(22, 22), anchor: new google.maps.Point(11, 11) },
+          title: '現在地', zIndex: 999, clickable: false,
         });
       } else {
         myLocationMarker.setPosition(pos);
       }
+
+      // 距離が変わるので一覧を再描画
+      renderShelterList();
+      renderChecklist();
     }
 
-    function createMarkerSvg(spot, isCollected) {
-      const bg = isCollected ? '%23f59e0b' : '%23e5e7eb';
-      const border = isCollected ? '%23d97706' : '%239ca3af';
-      const text = isCollected ? encodeURIComponent(spot.icon) : '%3F';
-      // SVGマーカーアイコン
-      const svg = `data:image/svg+xml,` +
+    function createMarkerSvg(shelter, isConfirmed) {
+      const bg = isConfirmed ? '%23555' : '%231a1a1a';
+      const border = isConfirmed ? '%23999' : '%23555';
+      const text = isConfirmed ? '%E2%9C%93' : '%F0%9F%8F%A0';
+      return `data:image/svg+xml,` +
         `%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E` +
         `%3Ccircle cx='24' cy='24' r='22' fill='${bg}' stroke='${border}' stroke-width='3'/%3E` +
-        `%3Ctext x='24' y='24' text-anchor='middle' dominant-baseline='central' font-size='20'%3E${text}%3C/text%3E` +
+        `%3Ctext x='24' y='24' text-anchor='middle' dominant-baseline='central' font-size='18'%3E${text}%3C/text%3E` +
         `%3C/svg%3E`;
-      return svg;
     }
 
     function renderMap() {
       if (!gmap) return;
 
-      // 既存マーカーを削除
       gMarkers.forEach(m => m.setMap(null));
       gMarkers = [];
-      if (openInfoWindow) {
-        openInfoWindow.close();
-        openInfoWindow = null;
-      }
+      if (openInfoWindow) { openInfoWindow.close(); openInfoWindow = null; }
 
-      SPOTS.forEach(spot => {
-        const isCollected = collected.includes(spot.id);
+      SHELTERS.forEach(s => {
+        const isConfirmed = confirmed.includes(s.id);
+        const dist = getDistanceText(s);
 
         const marker = new google.maps.Marker({
-          position: { lat: spot.lat, lng: spot.lng },
+          position: { lat: s.lat, lng: s.lng },
           map: gmap,
           icon: {
-            url: createMarkerSvg(spot, isCollected),
+            url: createMarkerSvg(s, isConfirmed),
             scaledSize: new google.maps.Size(44, 44),
             anchor: new google.maps.Point(22, 22),
           },
-          title: spot.name,
+          title: s.name,
         });
 
-        const infoContent = `
+        const content = `
           <div class="spot-popup">
-            <div class="popup-icon">${spot.icon}</div>
-            <div class="popup-name">${spot.name}</div>
-            <div class="popup-desc">${spot.description}</div>
-            <button class="popup-btn ${isCollected ? 'collected-btn' : ''}"
-                    id="popup-btn-${spot.id}">
-              ${isCollected ? '✓ 収集済み' : 'スタンプを獲得'}
+            <div class="popup-name">${s.name}</div>
+            <div class="popup-address">${s.address}</div>
+            ${dist ? `<div class="popup-distance">${SVG_ICONS.pin} ${dist}</div>` : ''}
+            <div class="popup-tags">${disasterTagsHtml(s.disasterTypes)}</div>
+            <button class="popup-btn ${isConfirmed ? 'confirmed-btn' : ''}" id="popup-btn-${s.id}">
+              ${isConfirmed ? '✓ 確認済み' : '確認する'}
             </button>
           </div>
         `;
 
-        const infoWindow = new google.maps.InfoWindow({ content: infoContent });
+        const iw = new google.maps.InfoWindow({ content });
 
         marker.addListener('click', () => {
           if (openInfoWindow) openInfoWindow.close();
-          infoWindow.open(gmap, marker);
-          openInfoWindow = infoWindow;
+          iw.open(gmap, marker);
+          openInfoWindow = iw;
         });
 
-        // InfoWindow が開いた後にボタンイベントを設定
-        infoWindow.addListener('domready', () => {
-          const btn = document.getElementById(`popup-btn-${spot.id}`);
-          if (btn && !isCollected) {
-            btn.addEventListener('click', () => {
-              collectStamp(spot.id);
-            });
+        iw.addListener('domready', () => {
+          const btn = document.getElementById(`popup-btn-${s.id}`);
+          if (btn && !isConfirmed) {
+            btn.addEventListener('click', () => confirmShelter(s.id));
           }
         });
 
@@ -850,7 +993,7 @@
     }
 
     // タブ切り替え
-    const viewMap = { map: 'mapView', spots: 'spotsView', book: 'bookView' };
+    const viewMap = { map: 'mapView', list: 'listView', check: 'checkView' };
 
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -863,7 +1006,6 @@
         const container = document.getElementById('contentContainer');
         if (tabName === 'map') {
           container.classList.add('map-active');
-          // Google Maps はリサイズイベントで自動調整
           setTimeout(() => google.maps.event.trigger(gmap, 'resize'), 100);
         } else {
           container.classList.remove('map-active');
@@ -896,19 +1038,22 @@
 
     // リセット
     document.getElementById('resetBtn').addEventListener('click', () => {
-      if (confirm('すべてのスタンプデータをリセットしますか？')) {
-        collected = [];
-        saveCollected(collected);
-        renderSpots();
-        renderStampBook();
+      if (confirm('確認データをリセットしますか？')) {
+        confirmed = [];
+        saveConfirmed(confirmed);
+        renderShelterList();
+        renderChecklist();
         renderMap();
         updateProgress();
       }
     });
 
-    // 初期描画（地図以外 — 地図は initMap コールバックで描画）
-    renderSpots();
-    renderStampBook();
+    // トロフィーアイコン設定
+    document.getElementById('trophyIcon').innerHTML = SVG_ICONS.shield;
+
+    // 初期描画
+    renderShelterList();
+    renderChecklist();
     updateProgress();
   </script>
 </body>
